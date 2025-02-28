@@ -9,11 +9,11 @@ console.log(`WebSocket Server is running on port ${port}`);
 server.on("connection", (ws: WebSocket) => {
   console.log("Client has connected");
   clients.add(ws); // クライアントを追加
+  console.log("Client: ", ws);
 
   ws.on("message", (message: string) => {
     console.log(`Received message => ${message}`);
     // すべてのクライアントにメッセージをブロードキャスト
-    // biome-ignore lint/complexity/noForEach: <explanation>
     clients.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(`${message}`);
