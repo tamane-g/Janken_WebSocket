@@ -4,7 +4,7 @@
  * https://www.php.cn/ja/faq/614495.html
  */
 import React, { useEffect, useState, useRef } from "react";
-import { Button, TextInput, Group, Stack, Box } from "@mantine/core";
+import { Text, Button, TextInput, Paper, Group, Stack, Box } from "@mantine/core";
 
 type MessageType = {
   content: {
@@ -57,13 +57,32 @@ const ChatBox: React.FC = () => {
       my={30}
       mx={30}
     >
-      <Stack>
+      <Stack
+        my="md"
+      >
         {messages.map((message, index) => (
-          <Box
+          <Paper
             key={index}
+            shadow="xs"
+            p="md"
           >
-            { message.content.handleName + ": " + message.content.message }
-          </Box>
+            <Stack
+              gap="xs"
+              ml={6}
+            >
+              <Text
+                fw={700}
+                m={-5}
+              >
+                { message.content.handleName + ":" }
+              </Text>
+              <Text
+                m={-5}
+              >
+                { message.content.message }
+              </Text>
+            </Stack>
+          </Paper>
         ))}
       </Stack>
       <Stack
