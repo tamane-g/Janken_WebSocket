@@ -1,10 +1,10 @@
 import React from 'react';
-import ChatBox from './ChatBox'
+import Janken from './Janken'
 
 function App() {
   return (
     <React.Fragment>
-      <ChatBox/>
+      <Janken/>
     </React.Fragment>
   );
 }

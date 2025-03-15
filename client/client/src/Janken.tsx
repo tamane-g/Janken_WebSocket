@@ -7,30 +7,33 @@ import React, { useEffect, useState, useRef } from "react";
 import { Text, Button, TextInput, Paper, Group, Stack, Box } from "@mantine/core";
 
 type MessageType = {
-  content: {
-    message: string;
-    handleName: string;
-  }
+  message: string;
+  content: any;
 };
 
-const ChatBox: React.FC = () => {
+const Janken: React.FC = () => {
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const [inputMessage, setInputMessage] = useState<string>("");
-  const [inputHandleName, setInputHandleName] = useState<string>("");
+  const storedUUID = localStorage.getItem("uuid");
+  const UUID = storedUUID || crypto.randomUUID();
   const ws = useRef<WebSocket | null>(null);
+
+  if(!storedUUID) {
+    localStorage.setItem("uuid", UUID);
+  }
 
   useEffect(() => {
     const websocket = new WebSocket("ws://localhost:8000");
     ws.current = websocket;
 
     const onOpen = () => {
-      console.log("WebSocket接続完了");
+      websocket.send(JSON.stringify({ message: "auth", content: { uuid: UUID } }));
+      console.log(`WebSocket接続完了(uuid: ${UUID})`);
     };
     websocket.addEventListener('open', onOpen);
 
     const onMessage = (event: MessageEvent) => {
       const message: MessageType = JSON.parse(event.data);
-      console.log("received message: " + message.content);
+      console.log("received message: " + JSON.stringify(message));
       setMessages((prevMessages) => [...prevMessages, message]);
     };
     websocket.addEventListener('message', onMessage);
@@ -39,14 +42,19 @@ const ChatBox: React.FC = () => {
       websocket?.close();
       websocket.removeEventListener('open', onOpen);
       websocket.removeEventListener('message', onMessage);
+      console.log("connection closed");
     };
   }, []);
 
-  const sendMessage = () => {
+  const startMatching = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      console.log("sended message: " + inputMessage);
-      ws.current.send(JSON.stringify({ content: { message: inputMessage, handleName: inputHandleName } }));
-      setInputMessage("");
+      const message = {
+        message: "start-matching",
+        content: {
+          uuid: UUID,
+      }}
+      ws.current.send(JSON.stringify(message));
+
     } else {
       console.warn("WebSocketが接続されていません");
     }
@@ -71,12 +79,6 @@ const ChatBox: React.FC = () => {
               ml={6}
             >
               <Text
-                fw={700}
-                m={-5}
-              >
-                { message.content.handleName + ":" }
-              </Text>
-              <Text
                 m={-5}
               >
                 { message.content.message }
@@ -85,37 +87,15 @@ const ChatBox: React.FC = () => {
           </Paper>
         ))}
       </Stack>
-      <Stack
-        gap="xs"
+      <Button
+        variant="filled"
+        radius="xl"
+        onClick={startMatching}
       >
-        <TextInput
-          w={120}
-          size="xs"
-          radius="xl"
-          label="ハンドルネーム"
-          value={inputHandleName}
-          onChange={(event) => setInputHandleName(event.target.value)}
-        />
-        <Group
-          align="end"
-        >
-          <TextInput
-            radius="xl"
-            label="メッセージ"
-            value={inputMessage}
-            onChange={(event) => setInputMessage(event.target.value)}
-          />
-          <Button
-            variant="filled"
-            radius="xl"
-            onClick={sendMessage}
-          >
-            送信
-          </Button>
-        </Group>
-      </Stack>
+        マッチ開始
+      </Button>
     </Box>
   );
 };
 
-export default ChatBox;
+export default Janken;
