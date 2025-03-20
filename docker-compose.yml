@@ -1,4 +1,21 @@
 services:
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+
+  server:
+    build: 
+      context: ./server
+      dockerfile: Dockerfile
+    tty: true
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+    ports:
+      - 8000:8000
+
   client01:
     build: 
       context: ./client
@@ -22,13 +39,3 @@ services:
       - server
     ports:
       - 3001:3000
-
-  server:
-    build: 
-      context: ./server
-      dockerfile: Dockerfile
-    tty: true
-    volumes:
-      - .:/app
-    ports:
-      - 8000:8000

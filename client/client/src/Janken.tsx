@@ -46,10 +46,10 @@ const Janken: React.FC = () => {
     };
   }, []);
 
-  const startMatching = () => {
+  const joinMatchMaking = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       const message = {
-        message: "start-matching",
+        message: "join-match-making",
         content: {
           uuid: UUID,
       }}
@@ -90,7 +90,7 @@ const Janken: React.FC = () => {
       <Button
         variant="filled"
         radius="xl"
-        onClick={startMatching}
+        onClick={joinMatchMaking}
       >
         マッチ開始
       </Button>
