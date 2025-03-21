@@ -12,10 +12,10 @@ type MessageType = {
 };
 
 const Janken: React.FC = () => {
-  const [messages, setMessages] = useState<MessageType[]>([]);
   const storedUUID = localStorage.getItem("uuid");
   const UUID = storedUUID || crypto.randomUUID();
   const ws = useRef<WebSocket | null>(null);
+  const [inputHandleName, setInputHandleName] = useState<string>("");
 
   if(!storedUUID) {
     localStorage.setItem("uuid", UUID);
@@ -34,7 +34,6 @@ const Janken: React.FC = () => {
     const onMessage = (event: MessageEvent) => {
       const message: MessageType = JSON.parse(event.data);
       console.log("received message: " + JSON.stringify(message));
-      setMessages((prevMessages) => [...prevMessages, message]);
     };
     websocket.addEventListener('message', onMessage);
 
@@ -52,6 +51,7 @@ const Janken: React.FC = () => {
         message: "join-match-making",
         content: {
           uuid: UUID,
+          name: inputHandleName
       }}
       ws.current.send(JSON.stringify(message));
 
@@ -61,40 +61,26 @@ const Janken: React.FC = () => {
   };
 
   return (
-    <Box
+    <Stack
       my={30}
       mx={30}
     >
-      <Stack
-        my="md"
-      >
-        {messages.map((message, index) => (
-          <Paper
-            key={index}
-            shadow="xs"
-            p="md"
-          >
-            <Stack
-              gap="xs"
-              ml={6}
-            >
-              <Text
-                m={-5}
-              >
-                { message.content.message }
-              </Text>
-            </Stack>
-          </Paper>
-        ))}
-      </Stack>
+      <TextInput
+        w={240}
+        radius="xl"
+        label="プレイヤーネーム"
+        value={inputHandleName}
+        onChange={(event) => setInputHandleName(event.target.value)}
+      />
       <Button
+        w={120}
         variant="filled"
         radius="xl"
         onClick={joinMatchMaking}
       >
         マッチ開始
       </Button>
-    </Box>
+    </Stack>
   );
 };
 

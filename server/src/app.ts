@@ -7,19 +7,22 @@ import Redis from "ioredis";
 type Player = {
   client: WebSocket;
   state: string;
+  name?: string;
 };
 
 const redis       = new Redis({ host: "redis", port: 6379 });
+const redisSub    = new Redis({ host: "redis", port: 6379 });
 const server      = new WebSocketServer({ port: 8000 });
 
 const clients     = new Set<WebSocket>(); // 接続中のクライアントを格納するSet
 const playersUUID = new Map<string, Player>();
 
-function updatePlayerState(uuid: string, state: string) {
+function updatePlayer(uuid: string, state: string, name?: string) {
   const player = playersUUID.get(uuid);
 
   if(player) {
-    player.state = state; 
+    if(state) { player.state = state }
+    if(name)  { player.name = name }
     playersUUID.set(uuid, player);
 
     return true;
@@ -27,6 +30,27 @@ function updatePlayerState(uuid: string, state: string) {
 }
 
 console.log(`WebSocket Server is running on port 8000`);
+
+redisSub.subscribe("match-notification");
+redisSub.on("message", (channel, message) => {
+  console.log(`Publish received from ${channel}: ${message}`);
+  if(channel === "match-notification") {
+    const data = JSON.parse(message);
+    const player1UUID = data?.player1;
+    const player2UUID = data?.player2;
+    const player1 = playersUUID.get(player1UUID);
+    const player2 = playersUUID.get(player2UUID);
+    const player1name = player1?.name || "NoName";
+    const player2name = player2?.name || "NoName";
+
+    if(player1?.client && player2?.client) {
+      player1.client.send(JSON.stringify({ message: "matched", content: { opponent: player2name }}));
+      player2.client.send(JSON.stringify({ message: "matched", content: { opponent: player1name }}));
+      
+      console.log(`Matched: ${player1name} vs ${player2name}`);
+    }
+  }
+});
 
 server.on("connection", (ws: WebSocket) => {
   console.log("Client has connected");
@@ -42,7 +66,8 @@ server.on("connection", (ws: WebSocket) => {
           console.log("Client authenticated")
           const player: Player = {
             client: ws,
-            state: "stand-by"
+            state: "stand-by",
+            name: data.content?.name
           }
           playersUUID.set(data.content.uuid, player);
         }
@@ -53,8 +78,8 @@ server.on("connection", (ws: WebSocket) => {
         if(ws === playersUUID.get(data.content?.uuid)?.client) {
           if(playersUUID.get(data.content.uuid)?.state === "stand-by") {
             console.log("Joined match making");
-            updatePlayerState(data.content.uuid, "in-queue");
-            await redis.lpush("matchMaking-queue", JSON.stringify({ id: data.content.uuid }));
+            updatePlayer(data.content.uuid, "in-queue", data.content?.name);
+            await redis.lpush("matchMaking-queue", data.content.uuid);
           } else {
             console.log("Already joined");
           }
