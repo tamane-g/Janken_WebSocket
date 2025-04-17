@@ -13,27 +13,43 @@ type MessageType = {
 
 const Janken: React.FC = () => {
   const storedUUID = localStorage.getItem("uuid");
-  const UUID = storedUUID || crypto.randomUUID();
   const ws = useRef<WebSocket | null>(null);
+  const [UUID, setUUID] = useState<string>("");
+  const [state, setState] = useState<string>("stand-by");
   const [inputHandleName, setInputHandleName] = useState<string>("");
-
-  if(!storedUUID) {
-    localStorage.setItem("uuid", UUID);
-  }
 
   useEffect(() => {
     const websocket = new WebSocket("ws://localhost:8000");
     ws.current = websocket;
 
     const onOpen = () => {
-      websocket.send(JSON.stringify({ message: "auth", content: { uuid: UUID } }));
-      console.log(`WebSocket接続完了(uuid: ${UUID})`);
+      console.log(`WebSocket接続完了`);
+
+      if(!storedUUID) {
+        console.log("not found UUID. request the server to issue an ID.");
+        websocket.send(JSON.stringify({ message: "reqUUID" }));
+      } else {
+        console.log("found UUID: " + storedUUID);
+        websocket.send(JSON.stringify({ message: "authUUID", content: { uuid: storedUUID }}));
+      }
     };
     websocket.addEventListener('open', onOpen);
 
     const onMessage = (event: MessageEvent) => {
       const message: MessageType = JSON.parse(event.data);
       console.log("received message: " + JSON.stringify(message));
+
+      switch(message.message) {
+        case "assignUUID":
+          console.log("assigned UUID: " + message.content.uuid);
+          setUUID(message.content.uuid);
+          localStorage.setItem("uuid", message.content.uuid);
+          break;
+
+        case "matched":
+          setState("in-game");
+          break;
+      }
     };
     websocket.addEventListener('message', onMessage);
 
@@ -54,34 +70,58 @@ const Janken: React.FC = () => {
           name: inputHandleName
       }}
       ws.current.send(JSON.stringify(message));
-
+      setState("in-queue");
     } else {
       console.warn("WebSocketが接続されていません");
     }
   };
 
-  return (
-    <Stack
-      my={30}
-      mx={30}
-    >
-      <TextInput
-        w={240}
-        radius="xl"
-        label="プレイヤーネーム"
-        value={inputHandleName}
-        onChange={(event) => setInputHandleName(event.target.value)}
-      />
-      <Button
-        w={120}
-        variant="filled"
-        radius="xl"
-        onClick={joinMatchMaking}
-      >
-        マッチ開始
-      </Button>
-    </Stack>
-  );
+  switch(state) {
+    case "stand-by":
+      return (
+        <Stack
+          my={30}
+          mx={30}
+        >
+          <TextInput
+            w={240}
+            radius="xl"
+            label="プレイヤーネーム"
+            value={inputHandleName}
+            onChange={(event) => setInputHandleName(event.target.value)}
+          />
+          <Button
+            w={120}
+            variant="filled"
+            radius="xl"
+            onClick={joinMatchMaking}
+          >
+            マッチ開始
+          </Button>
+        </Stack>
+      );
+
+    case "in-queue":
+      return (
+        <Text>
+          マッチング中…
+        </Text>
+      );
+
+    case "in-game":
+      return (
+        <Text>
+          マッチしました
+        </Text>
+      );
+
+    default:
+      return (
+        <Text>
+          404 Not Found
+        </Text>
+      );
+  }
 };
 
 export default Janken;

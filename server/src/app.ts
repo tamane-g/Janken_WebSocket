@@ -3,6 +3,7 @@ https://qiita.com/coret/items/59ccfa7457f8491b6b35
 */
 import { WebSocket, WebSocketServer } from "ws";
 import Redis from "ioredis";
+import { randomUUID } from 'crypto';
 
 type Player = {
   client: WebSocket;
@@ -29,6 +30,17 @@ function updatePlayer(uuid: string, state: string, name?: string) {
   } else { return false }
 }
 
+function assignNewUUID(ws: WebSocket, name?: string) {
+  const player: Player = {
+    client: ws,
+    state: "stand-by",
+    name: name
+  }
+  const uuid = randomUUID();
+  playersUUID.set(uuid, player);
+  ws.send(JSON.stringify({ message: "assignUUID", content: { uuid: uuid }}));
+}
+
 console.log(`WebSocket Server is running on port 8000`);
 
 redisSub.subscribe("match-notification");
@@ -47,6 +59,8 @@ redisSub.on("message", (channel, message) => {
       player1.client.send(JSON.stringify({ message: "matched", content: { opponent: player2name }}));
       player2.client.send(JSON.stringify({ message: "matched", content: { opponent: player1name }}));
       
+      updatePlayer(player1UUID, "in-game");
+      updatePlayer(player2UUID, "in-game");
       console.log(`Matched: ${player1name} vs ${player2name}`);
     }
   }
@@ -61,17 +75,19 @@ server.on("connection", (ws: WebSocket) => {
     console.log("Received data => ", data);
     
     switch(data.message) {
-      case "auth":
+      case "reqUUID":
+        console.log("Client requested UUID")
+        assignNewUUID(ws, data.content?.name);
+        break;
+
+      case "authUUID":
+        console.log(`Client requested to authenticate UUID(${data.content?.uuid})`);
         if(data.content?.uuid) {
-          console.log("Client authenticated")
-          const player: Player = {
-            client: ws,
-            state: "stand-by",
-            name: data.content?.name
-          }
-          playersUUID.set(data.content.uuid, player);
-        }
-        
+          if(playersUUID.has(data.content.uuid)){
+            ws.send(JSON.stringify({ message: "assignUUID", content: { uuid: data.content.uuid }}));
+            break;
+        }}
+        assignNewUUID(ws, data.content?.name);
         break;
       
       case "join-match-making":
