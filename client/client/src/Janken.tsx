@@ -4,7 +4,7 @@
  * https://www.php.cn/ja/faq/614495.html
  */
 import React, { useEffect, useState, useRef } from "react";
-import { Text, Button, TextInput, Paper, Group, Stack, Box } from "@mantine/core";
+import { Text, Button, TextInput, Stack, ActionIcon, Image} from "@mantine/core";
 
 type MessageType = {
   message: string;
@@ -79,47 +79,61 @@ const Janken: React.FC = () => {
   switch(state) {
     case "stand-by":
       return (
-        <Stack
-          my={30}
-          mx={30}
-        >
-          <TextInput
-            w={240}
-            radius="xl"
-            label="プレイヤーネーム"
-            value={inputHandleName}
-            onChange={(event) => setInputHandleName(event.target.value)}
-          />
-          <Button
-            w={120}
-            variant="filled"
-            radius="xl"
-            onClick={joinMatchMaking}
+        <>
+          <Stack
+            my={30}
+            mx={30}
           >
-            マッチ開始
-          </Button>
-        </Stack>
+            <TextInput
+              w={240}
+              radius="xl"
+              label="プレイヤーネーム"
+              value={inputHandleName}
+              onChange={(event) => setInputHandleName(event.target.value)}
+            />
+            <Button
+              w={120}
+              variant="filled"
+              radius="xl"
+              onClick={joinMatchMaking}
+            >
+              マッチ開始
+            </Button>
+          </Stack>
+        </>
       );
 
     case "in-queue":
       return (
-        <Text>
-          マッチング中…
-        </Text>
+        <>
+          <Text>
+            マッチング中…
+          </Text>
+        </>
       );
 
     case "in-game":
       return (
-        <Text>
-          マッチしました
-        </Text>
+        <>
+          <ActionIcon variant="transparent">
+            <Image src="./images/janken_gu.png"/>
+          </ActionIcon>
+          <ActionIcon variant="transparent">
+            <Image src="./images/janken_choki.png"/>
+          </ActionIcon>
+          <ActionIcon variant="transparent">
+            <Image src="./images/janken_pa.png"/>
+          </ActionIcon>
+        </>
       );
 
     default:
       return (
-        <Text>
-          404 Not Found
-        </Text>
+        <>
+          <Text>
+            404 Not Found
+          </Text>
+        </>
       );
   }
 };
