@@ -39,6 +39,7 @@ function assignNewUUID(ws: WebSocket, name?: string) {
   const uuid = randomUUID();
   playersUUID.set(uuid, player);
   ws.send(JSON.stringify({ message: "assignUUID", content: { uuid: uuid }}));
+  console.log(`Assigned new UUID(${uuid}).`);
 }
 
 console.log(`WebSocket Server is running on port 8000`);
@@ -76,17 +77,21 @@ server.on("connection", (ws: WebSocket) => {
     
     switch(data.message) {
       case "reqUUID":
-        console.log("Client requested UUID")
+        console.log("Client requested to assign new UUID.")
         assignNewUUID(ws, data.content?.name);
         break;
 
       case "authUUID":
-        console.log(`Client requested to authenticate UUID(${data.content?.uuid})`);
+        console.log(`Client requested to authenticate UUID(${data.content?.uuid}).`);
         if(data.content?.uuid) {
           if(playersUUID.has(data.content.uuid)){
+            console.log("Authentication succeed.");
             ws.send(JSON.stringify({ message: "assignUUID", content: { uuid: data.content.uuid }}));
-            break;
-        }}
+          } else {
+            assignNewUUID(ws, data.content?.name);
+          }
+          break;
+        }
         assignNewUUID(ws, data.content?.name);
         break;
       

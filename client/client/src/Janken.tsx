@@ -4,7 +4,7 @@
  * https://www.php.cn/ja/faq/614495.html
  */
 import React, { useEffect, useState, useRef } from "react";
-import { Text, Button, TextInput, Stack, ActionIcon, Image} from "@mantine/core";
+import { Text, Button, TextInput, Stack, ActionIcon, Image } from "@mantine/core";
 
 type MessageType = {
   message: string;
@@ -16,6 +16,7 @@ const Janken: React.FC = () => {
   const ws = useRef<WebSocket | null>(null);
   const [UUID, setUUID] = useState<string>("");
   const [state, setState] = useState<string>("stand-by");
+  const [opponent, setOpponent] = useState<string>("");
   const [inputHandleName, setInputHandleName] = useState<string>("");
 
   useEffect(() => {
@@ -48,6 +49,7 @@ const Janken: React.FC = () => {
 
         case "matched":
           setState("in-game");
+          setOpponent(message.content.opponent);
           break;
       }
     };
@@ -115,6 +117,7 @@ const Janken: React.FC = () => {
     case "in-game":
       return (
         <>
+          {opponent}
           <ActionIcon variant="transparent">
             <Image src="./images/janken_gu.png"/>
           </ActionIcon>
