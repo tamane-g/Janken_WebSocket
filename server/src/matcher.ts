@@ -1,4 +1,5 @@
 import Redis from "ioredis";
+import { randomUUID } from 'crypto';
 
 const redis = new Redis({ host: "redis", port: 6379 });
 
@@ -11,7 +12,9 @@ async function MatchMaking() {
             const [_,  player1UUID] = result1;
             const [__, player2UUID] = result2;
             
-            await redis.publish("match-notification", JSON.stringify({ player1: player1UUID, player2: player2UUID }));
+            const uuid = randomUUID();
+            
+            await redis.publish("match-notification", JSON.stringify({ gameUUID: uuid, player1: player1UUID, player2: player2UUID }));
             console.log(`Match notify: ${player1UUID} & ${player2UUID}`);
         }
     }
